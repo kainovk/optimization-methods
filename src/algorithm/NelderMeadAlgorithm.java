@@ -127,21 +127,18 @@ public class NelderMeadAlgorithm {
                 }
 
                 // Глобальное сжатие
-                shrink(simplex, bestPoint, shrink, dimension);
+                for (int i = 1; i <= dimension; i++) {
+                    Point p = simplex.get(i);
+                    for (int j = 0; j < dimension; j++) {
+                        p.set(j, bestPoint.get(j) + shrink * (p.get(j) - bestPoint.get(j)));
+                    }
+                    simplex.set(i, p);
+                }
             }
             iterCount++;
         }
 
         return simplex.get(0);
-    }
-
-    private static void shrink(List<Point> simplex, Point bestPoint, double shrink, int dimension) {
-        for (int i = 1; i <= dimension; i++) {
-            Point p = simplex.get(i);
-            for (int j = 0; j < dimension; j++) {
-                p.set(j, bestPoint.get(j) + shrink * (p.get(j) - bestPoint.get(j)));
-            }
-        }
     }
 
     private static Point computeInsideContractionPoint(Point centroid, Point worstPoint, double contraction, int size) {
