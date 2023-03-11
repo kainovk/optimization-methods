@@ -64,7 +64,7 @@ public class NelderMeadAlgorithm {
         List<Point> simplex = createInitialSimplex(initialPoint);
 
         int iterCount = 0;
-        while (iterCount != maxIter) {
+        while (iterCount != maxIter && !stopCondition(simplex, epsilon)) {
             System.out.println("Итерация: " + (iterCount + 1));
 
             // Сортируем точки симплекса по значению функции
@@ -78,10 +78,6 @@ public class NelderMeadAlgorithm {
             double worstValue = function.apply(worstPoint);
 
             System.out.println("Simplex: " + simplex);
-
-            if (stopCondition(simplex, epsilon)) {
-                break;
-            }
 
             // Вычисляем центр тяжести вершин, кроме самой удаленной
             Point centroid = calculateCentroidPoint(simplex, dimension);
