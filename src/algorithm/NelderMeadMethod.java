@@ -1,63 +1,24 @@
 package src.algorithm;
 
+import src.util.Function;
+import src.util.Logger;
+import src.util.Point;
+
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
-public class NelderMeadAlgorithm {
-
+public class NelderMeadMethod {
     private static final Random rand = new Random();
 
-    // Точка в n-мерном пространстве
-    public static class Point {
-        double[] coordinates;
+    private final Logger log;
 
-        public Point(double... coords) {
-            this.coordinates = coords;
-        }
-
-        public double get(int i) {
-            return coordinates[i];
-        }
-
-        public void set(int i, double value) {
-            coordinates[i] = value;
-        }
-
-        public int size() {
-            return coordinates.length;
-        }
-
-        @Override
-        public String toString() {
-            return Arrays.toString(coordinates);
-        }
+    public NelderMeadMethod(Logger log) {
+        this.log = log;
     }
 
-    // Функция, которую оптимизируем
-    public interface Function {
-        double apply(Point point);
-    }
-
-    public static class PointComparator implements Comparator<Point> {
-        Function function;
-
-        public PointComparator(Function function) {
-            this.function = function;
-        }
-
-        @Override
-        public int compare(Point o1, Point o2) {
-            double diff = function.apply(o1) - function.apply(o2);
-            int lessOrEqual = (diff < 0) ? -1 : 0;
-            return (diff > 0) ? 1 : lessOrEqual;
-        }
-    }
-
-    public static Point optimize(Function function, Point initialPoint, double epsilon, int maxIter,
-                                 double reflection, double expansion, double contraction, double shrink) {
+    public Point optimize(Function function, Point initialPoint, double epsilon, int maxIter,
+                          double reflection, double expansion, double contraction, double shrink) {
         int dimension = initialPoint.size();
 
         // Simplex
@@ -65,10 +26,10 @@ public class NelderMeadAlgorithm {
 
         int iterCount = 0;
         while (iterCount != maxIter && !stopCondition(simplex, epsilon)) {
-            System.out.println("Итерация: " + (iterCount + 1));
+            log.both("Итерация: " + (iterCount + 1));
 
             // Сортируем точки симплекса по значению функции
-            simplex.sort(new PointComparator(function));
+            simplex.sort(new Point.PointComparator(function));
 
             Point bestPoint = simplex.get(0);
             Point goodPoint = simplex.get(simplex.size() - 2);
@@ -77,7 +38,7 @@ public class NelderMeadAlgorithm {
             double goodValue = function.apply(goodPoint);
             double worstValue = function.apply(worstPoint);
 
-            System.out.println("Simplex: " + simplex);
+            log.both("Simplex: " + simplex);
 
             // Вычисляем центр тяжести вершин, кроме самой удаленной
             Point centroid = calculateCentroidPoint(simplex, dimension);
@@ -127,18 +88,22 @@ public class NelderMeadAlgorithm {
                 }
 
                 // Глобальное сжатие
-                for (int i = 1; i <= dimension; i++) {
-                    Point p = simplex.get(i);
-                    for (int j = 0; j < dimension; j++) {
-                        p.set(j, bestPoint.get(j) + shrink * (p.get(j) - bestPoint.get(j)));
-                    }
-                    simplex.set(i, p);
-                }
+                shrink(simplex, dimension, shrink, bestPoint);
             }
             iterCount++;
         }
 
         return simplex.get(0);
+    }
+
+    private static void shrink(List<Point> simplex, int dimension, double shrink, Point bestPoint) {
+        for (int i = 1; i <= dimension; i++) {
+            Point p = simplex.get(i);
+            for (int j = 0; j < dimension; j++) {
+                p.set(j, bestPoint.get(j) + shrink * (p.get(j) - bestPoint.get(j)));
+            }
+            simplex.set(i, p);
+        }
     }
 
     private static Point computeInsideContractionPoint(Point centroid, Point worstPoint, double contraction, int size) {
@@ -219,7 +184,7 @@ public class NelderMeadAlgorithm {
         simplex.add(initialPoint);
 
         for (int i = 0; i < initialPoint.size(); i++) {
-            Point point = new Point(initialPoint.coordinates.clone());
+            Point point = new Point(initialPoint.getCopy());
             double offset = rand.nextGaussian();
             if (point.get(i) != 0) {
                 point.set(i, point.get(i) * offset);
